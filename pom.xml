@@ -6,7 +6,7 @@
 
     <groupId>de.codehat</groupId>
     <artifactId>mobcapture</artifactId>
-    <version>0.0.0</version>
+    <version>0.1.0-SNAPSHOT</version>
     <name>MobCapture</name>
 
     <repositories>
@@ -69,4 +69,11 @@
         </plugins>
     </build>
 
+    <distributionManagement>
+        <repository>
+            <id>bintray-maven-repo</id>
+            <name>codehat-maven-repo</name>
+            <url>https://api.bintray.com/maven/codehat/maven-repo/mobcapture/;publish=1</url>
+        </repository>
+    </distributionManagement>
 </project>
