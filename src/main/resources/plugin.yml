@@ -1,0 +1,24 @@
+name: MobCapture
+main: de.codehat.mobcapture.MobCapture
+author: CodeHat
+website: https://www.spigotmc.org/none
+softdepend: [Vault]
+description: Catch mobs with eggs.
+version: 0.0.0
+
+commands:
+  mc:
+    description: Shows help page.
+    usage: /<command>
+    aliases: [mobcapture]
+
+permissions:
+  mobcapture.*:
+    description: Access to all features.
+    children:
+      mobcapture.help: true
+      mobcapture.reload: true
+  mobcapture.help:
+    description: Access to the help page.
+  mobcapture.reload:
+    description: Access to the config reload command.

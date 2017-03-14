@@ -1,0 +1,163 @@
+# Look into the 'languages' folder to see all available languages.
+language: 'en'
+
+worlds:
+  # List of all worlds, where capturing mobs is disabled (can be bypassed with permission).
+  disabled:
+  - 'world1'
+  - 'world2'
+
+capturing:
+  # A list of all mobs you can capture.
+  # Unlisted mobs are not catchable. The same applies to the 'enable' setting on each mob if it's false .
+  # If Vault isn't installed, the 'costs' settings are ignored.
+  mobs:
+    default:
+      # Default 'costs' value if you leave it out on the other mobs.
+      costs: 100.0
+    BAT:
+      enable: true
+      costs: 10.0
+    BLAZE:
+      enable: true
+      costs: 80.0
+    CAVE_SPIDER:
+      enable: true
+      costs: 50.0
+    CHICKEN:
+      enable: true
+      costs: 15.0
+    COW:
+      enable: true
+      costs: 25.0
+    CREEPER:
+      enable: true
+      costs: 50.0
+    DONKEY:
+      enable: true
+    ELDER_GUARDIAN:
+      enable: false
+      costs: 150.0
+    ENDERMAN:
+      enable: true
+      costs: 50.0
+    ENDERMITE:
+      enable: true
+      costs: 20.0
+    EVOKER:
+      enable: true
+      costs: 75.0
+    GHAST:
+      enable: true
+      costs: 40.0
+    GUARDIAN:
+      enable: true
+      costs: 35.0
+    HORSE:
+      enable: true
+    HUSK:
+      enable: true
+      costs: 70.0
+    LLAMA:
+      enable: true
+      costs: 70.0
+    MAGMA_CUBE:
+      enable: true
+      costs: 80.0
+    MULE:
+      enable: true
+    MUSHROOM_COW:
+      enable: true
+      costs: 65.0
+    OCELOT:
+      enable: true
+      costs: 25.0
+    PIG:
+      enable: true
+      costs: 20.0
+    PIG_ZOMBIE:
+      enable: true
+      costs: 75.0
+    POLAR_BEAR:
+      enable: true
+      costs: 65.0
+    RABBIT:
+      enable: true
+      costs: 25.0
+    SHEEP:
+      enable: true
+      costs: 25.0
+    SHULKER:
+      enable: true
+      costs: 95.0
+    SILVERFISH:
+      enable: false
+      costs: 25.0
+    SKELETON:
+      enable: true
+      costs: 75.0
+    SKELETON_HORSE:
+      enable: false
+      costs: 85.0
+    SLIME:
+      enable: true
+      costs: 50.0
+    SPIDER:
+      enable: true
+      costs: 55.0
+    SQUID:
+      enable: true
+      costs: 25.0
+    STRAY:
+      enable: true
+      costs: 75.0
+    VEX:
+      enable: true
+      costs: 40.0
+    VILLAGER:
+      enable: true
+      costs: 95.0
+    VINDICATOR:
+      enable: true
+      costs: 85.0
+    WITCH:
+      enable: true
+      costs: 65.0
+    WITHER_SKELETON:
+      enable: true
+      costs: 25.0
+    WOLF:
+      enable: true
+      costs: 80.0
+    ZOMBIE:
+      enable: true
+      costs: 65.0
+    ZOMBIE_HORSE:
+      enable: false
+      costs: 85.0
+    ZOMBIE_VILLAGER:
+      enable: true
+      costs: 65.0
+
+# Settings of the particles, which are spawned upon capturing a mob.
+particle:
+  enable: true
+  # List of possible values can be found here (https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Particle.html).
+  type: 'SMOKE_NORMAL'
+  amount: 50
+  # Same values as in the default '/particle' command (http://minecraft.gamepedia.com/Commands#particle).
+  xd: 0.0
+  yd: 0.0
+  zd: 0.0
+  velocity: 0.04
+
+# Settings of the sound, which is played upon capturing a mob.
+sound:
+  enable: true
+  # List of possible values can be found here (https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Sound.html).
+  type: 'ENTITY_BLAZE_SHOOT'
+  volume: 1.0
+  pitch: 1.25
+
+# DON'T TOUCH THIS LINE OR YOUR CONFIG COULD REGENERATE!
+configversion: 1
