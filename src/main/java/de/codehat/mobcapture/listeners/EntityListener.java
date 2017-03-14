@@ -144,6 +144,8 @@ public class EntityListener implements Listener {
 
             if (playerCaptureMobEvent.isCancelled()) {
                 if (!player.getGameMode().equals(GameMode.CREATIVE)) player.getInventory().addItem(new ItemStack(Material.EGG, 1));
+                this.plugin.getEggStorage().add(egg);
+                event.setCancelled(true);
                 return;
             }
             event.setCancelled(true);
