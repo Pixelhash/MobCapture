@@ -1,5 +1,8 @@
 package de.codehat.mobcapture.listeners;
 
+import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import de.codehat.mobcapture.MobCapture;
 import de.codehat.mobcapture.events.PlayerCaptureMobEvent;
 import de.codehat.mobcapture.util.Message;
@@ -8,9 +11,12 @@ import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityTeleportEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.material.Colorable;
@@ -59,6 +65,19 @@ public class EntityListener implements Listener {
 
         if (egg.getShooter() instanceof Player) {
             Player player = (Player) egg.getShooter();
+
+            if (this.plugin.getWorldGuardDependency() != null && this.plugin.getWorldGuardDependency().getWorldGuardPlugin() != null) {
+                LocalPlayer localPlayer = this.plugin.getWorldGuardDependency().getWorldGuardPlugin().wrapPlayer(player);
+                ApplicableRegionSet regions = this.plugin.getWorldGuardDependency().getWorldGuardPlugin().getRegionManager(entity.getWorld()).getApplicableRegions(entity.getLocation());
+                for(ProtectedRegion region : regions) {
+                    MobCapture.logger.info("Region: " + region.getId());
+                    if (!region.getOwners().contains(localPlayer)) {
+                        Message.sendWithLogo(player, "&cYou can't catch mobs from others regions.");
+                        event.setCancelled(true);
+                        return;
+                    }
+                }
+            }
 
             List<String> lore = new ArrayList<>();
 
@@ -173,8 +192,113 @@ public class EntityListener implements Listener {
             this.plugin.getEggStorage().add(egg);
             entity.getWorld().dropItem(entity.getLocation(), playerCaptureMobEvent.getSpawnEggStack());
         }
-
-
     }
 
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onEndermanHitWithEgg(ProjectileHitEvent event) {
+        if (!(event.getEntity() instanceof Egg)) {
+            return;
+        }
+
+        if (event.getHitEntity() == null || !(event.getHitEntity() instanceof LivingEntity)) {
+            return;
+        }
+        LivingEntity entity = (LivingEntity) event.getHitEntity();
+
+        Egg egg = (Egg) event.getEntity();
+        MonsterType monsterType = MonsterType.getEggType(entity);
+
+        if (monsterType == null) {
+            return;
+        }
+
+        if (!(entity instanceof Enderman)) {
+            return;
+        }
+
+        if (this.plugin.getConfig().getList("worlds.disabled").contains(entity.getWorld().getName())) {
+            return;
+        }
+
+        if (egg.getShooter() instanceof Player) {
+            Player player = (Player) egg.getShooter();
+
+            List<String> lore = new ArrayList<>();
+
+            lore.add(Message.replaceColors("&9Mob: &e") + monsterType.getCreatureType());
+
+            lore.add(Message.replaceColors("&9Block: &e" + ((Enderman) entity).getCarriedMaterial().getItemType()));
+
+            if(entity.getCustomName() != null) {
+                lore.add(Message.replaceColors("&9Name: &e" + entity.getCustomName()));
+            }
+
+            lore.add(Message.replaceColors(String.format(
+                    "&9Health: &e%s/%s",
+                    decimalFormat.format(entity.getHealth()),
+                    decimalFormat.format(entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue())
+            )));
+
+            ItemStack mobEgg = new ItemStack(Material.MONSTER_EGG, 1);
+            SpawnEggMeta spawnEggMeta = (SpawnEggMeta) mobEgg.getItemMeta();
+            spawnEggMeta.setSpawnedType(entity.getType());
+            spawnEggMeta.setLore(lore);
+            mobEgg.setItemMeta(spawnEggMeta);
+
+            PlayerCaptureMobEvent playerCaptureMobEvent = new PlayerCaptureMobEvent(mobEgg, player, entity);
+            Bukkit.getPluginManager().callEvent(playerCaptureMobEvent);
+
+            if (playerCaptureMobEvent.isCancelled()) {
+                if (!player.getGameMode().equals(GameMode.CREATIVE)) player.getInventory().addItem(new ItemStack(Material.EGG, 1));
+                this.plugin.getEggStorage().add(egg);
+                return;
+            }
+            entity.remove();
+            if (this.plugin.getConfig().getBoolean("particle.enable")) {
+                entity.getWorld().spawnParticle(
+                        Particle.valueOf(this.plugin.getConfig().getString("particle.type")),
+                        egg.getLocation(),
+                        this.plugin.getConfig().getInt("particle.amount"),
+                        this.plugin.getConfig().getDouble("particle.xd"),
+                        this.plugin.getConfig().getDouble("particle.yd"),
+                        this.plugin.getConfig().getDouble("particle.zd"),
+                        this.plugin.getConfig().getDouble("particle.velocity")
+                );
+            }
+
+            if (this.plugin.getConfig().getBoolean("sound.enable")) {
+                entity.getWorld().playSound(
+                        egg.getLocation(),
+                        Sound.valueOf(this.plugin.getConfig().getString("sound.type")),
+                        this.plugin.getConfig().getInt("sound.volume"),
+                        this.plugin.getConfig().getInt("sound.pitch")
+                );
+            }
+            this.plugin.getEggStorage().add(egg);
+            entity.getWorld().dropItem(egg.getLocation(), playerCaptureMobEvent.getSpawnEggStack());
+        }
+    }
+
+    /*@EventHandler(priority = EventPriority.LOW)
+    public void onEndermanTeleport(EntityTeleportEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity)) {
+            return;
+        }
+
+        LivingEntity entity = (LivingEntity) event.getEntity();
+
+        if(!(entity instanceof Enderman)) {
+            return;
+        }
+        System.out.println("CHECK");
+        this.plugin.getServer().getScheduler().runTaskLater(this.plugin, () -> {
+            Enderman enderman = (Enderman) entity;
+            if (this.plugin.getEndermanStorage().contains(enderman)) {
+                System.out.println("PREVENT");
+                event.setCancelled(true);
+                enderman.teleport(event.getFrom());
+                this.plugin.getEndermanStorage().remove(enderman);
+            }
+        }, 20L);
+    }*/
 }

@@ -1,12 +1,11 @@
 package de.codehat.mobcapture.listeners;
 
 import de.codehat.mobcapture.MobCapture;
+import de.codehat.mobcapture.events.PlayerCaptureMobEvent;
+import de.codehat.mobcapture.events.PlayerSpawnCapturedMobEvent;
 import de.codehat.mobcapture.util.Message;
 import de.codehat.mobcapture.util.TriConsumer;
-import org.bukkit.ChatColor;
-import org.bukkit.DyeColor;
-import org.bukkit.GameMode;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -14,6 +13,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerEggThrowEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.material.Colorable;
 import org.bukkit.material.MaterialData;
@@ -147,33 +147,38 @@ public class PlayerListener implements Listener {
             return;
         }
         Player player = event.getPlayer();
-        if (!player.hasPermission("mobcapture.spawn")) {
-            Message.sendWithLogo(player, "&cYou don't have permission.");
+        Location spawnMobLocation = event.getClickedBlock().getRelative(event.getBlockFace()).getLocation();
+        SpawnEggMeta spawnEggMeta = (SpawnEggMeta) event.getItem().getItemMeta();
+        EntityType entityType = spawnEggMeta.getSpawnedType();
+
+
+        PlayerSpawnCapturedMobEvent playerSpawnCapturedMobEvent = new PlayerSpawnCapturedMobEvent(event.getItem(),
+                entityType, player, spawnMobLocation);
+        Bukkit.getPluginManager().callEvent(playerSpawnCapturedMobEvent);
+
+        if (playerSpawnCapturedMobEvent.isCancelled()) {
             event.setCancelled(true);
             return;
         }
 
-        SpawnEggMeta spawnEggMeta = (SpawnEggMeta) event.getItem().getItemMeta();
-        EntityType entityType = spawnEggMeta.getSpawnedType();
+        ItemStack spawnEgg = playerSpawnCapturedMobEvent.getSpawnEggStack();
+
         if (!player.getGameMode().equals(GameMode.CREATIVE)) {
-            if (event.getItem().getAmount() > 1) {
-                event.getItem().setAmount(event.getItem().getAmount() - 1);
+            if (spawnEgg.getAmount() > 1) {
+                spawnEgg.setAmount(spawnEgg.getAmount() - 1);
             } else {
                 player.getInventory().clear(player.getInventory().getHeldItemSlot());
             }
         }
 
-        List<String> lore = event.getItem().getItemMeta().getLore();
+        List<String> lore = spawnEgg.getItemMeta().getLore();
         List<String> noColorLore = lore.stream().map(ChatColor::stripColor).collect(Collectors.toList());
         Map<String, String> entityDataMap = noColorLore.stream().collect(Collectors.toMap(
                 s -> s.split(": ")[0].trim().toLowerCase(),
                 s -> s.split(": ")[1].trim()
         ));
 
-        LivingEntity entity = (LivingEntity) player.getWorld().spawnEntity(
-                event.getClickedBlock().getRelative(event.getBlockFace()).getLocation(),
-                entityType
-        );
+        LivingEntity entity = (LivingEntity) player.getWorld().spawnEntity(spawnMobLocation, entityType);
 
         for (String s : entityDataMap.keySet()) {
             MobCapture.logger.info(s + ":: " + entityDataMap.get(s));

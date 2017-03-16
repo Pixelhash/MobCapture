@@ -17,9 +17,10 @@ public class MobCaptureListener implements Listener {
     }
 
     @EventHandler
-    public void onCapturingMob(PlayerCaptureMobEvent event) {
+    public void onPlayerCaptureMob(PlayerCaptureMobEvent event) {
         Player player = event.getPlayer();
 
+        //TODO: Move back into 'EntityListener' next to the disabled world check.
         // Check if capture this kind of mob is disabled
         if (!this.plugin.getConfig().contains("capturing.mobs."
                 + event.getEntity().getType().toString(), true)
@@ -37,16 +38,16 @@ public class MobCaptureListener implements Listener {
         }
 
         // Check if Vault is enabled
-        if (MobCapture.getEconomy() != null) {
+        if (this.plugin.getVaultDependency() != null && this.plugin.getVaultDependency().getEconomy() != null) {
             // Check if the player has enough money
             double costs = this.getCosts(event.getEntity().getType());
             MobCapture.logger.info(String.valueOf(costs) + " : " + this.plugin.getConfig().getDouble("capturing.mobs." + event.getEntity().getType().toString() + ".costs"));
-            if (MobCapture.getEconomy().getBalance(player) < costs) {
+            if (this.plugin.getVaultDependency().getEconomy().getBalance(player) < costs) {
                 Message.sendWithLogo(player, "&cYou don't have enough money.");
                 event.setCancelled(true);
                 return;
             }
-            MobCapture.getEconomy().withdrawPlayer(player, costs);
+            this.plugin.getVaultDependency().getEconomy().withdrawPlayer(player, costs);
         }
     }
 

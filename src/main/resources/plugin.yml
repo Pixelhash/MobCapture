@@ -2,9 +2,9 @@ name: MobCapture
 main: de.codehat.mobcapture.MobCapture
 author: CodeHat
 website: https://www.spigotmc.org/none
-softdepend: [Vault]
+softdepend: [Vault, WorldGuard]
 description: Catch mobs with eggs.
-version: 0.0.0
+version: 0.1.0
 
 commands:
   mc:
@@ -18,7 +18,287 @@ permissions:
     children:
       mobcapture.help: true
       mobcapture.reload: true
+      mobcapture.spawnandcapture: true
   mobcapture.help:
     description: Access to the help page.
   mobcapture.reload:
     description: Access to the config reload command.
+  mobcapture.spawnandcapture:
+    description: Allows you to spawn and capture all enabled mobs.
+    children:
+      mobcapture.capture.*: true
+      mobcapture.spawn.*: true
+  mobcapture.capture.*:
+    description: Allows you to capture all enabled mobs.
+    children:
+      mobcapture.capture.friendly: true
+      mobcapture.capture.agressive: true
+  mobcapture.capture.friendly:
+    description: Allows you to capture non-agressive mobs like animals and villager.
+    children:
+      mobcapture.capture.bat: true
+      mobcapture.capture.chicken: true
+      mobcapture.capture.cow: true
+      mobcapture.capture.donkey: true
+      mobcapture.capture.horse: true
+      mobcapture.capture.llama: true
+      mobcapture.capture.mule: true
+      mobcapture.capture.mushroom_cow: true
+      mobcapture.capture.ocelot: true
+      mobcapture.capture.pig: true
+      mobcapture.capture.polar_bear: true
+      mobcapture.capture.rabbit: true
+      mobcapture.capture.sheep: true
+      mobcapture.capture.squid: true
+      mobcapture.capture.villager: true
+      mobcapture.capture.wolf: true
+  mobcapture.capture.agressive:
+    description: Allows you to capture agressive mobs like monsters and zombie villager.
+    children:
+      mobcapture.capture.blaze: true
+      mobcapture.capture.cave_spider: true
+      mobcapture.capture.creeper: true
+      mobcapture.capture.elder_guardian: true
+      mobcapture.capture.enderman: true
+      mobcapture.capture.endermite: true
+      mobcapture.capture.evoker: true
+      mobcapture.capture.ghast: true
+      mobcapture.capture.guardian: true
+      mobcapture.capture.husk: true
+      mobcapture.capture.magma_cube: true
+      mobcapture.capture.pig_zombie: true
+      mobcapture.capture.shulker: true
+      mobcapture.capture.silverfish: true
+      mobcapture.capture.skeleton: true
+      mobcapture.capture.skeleton_horse: true
+      mobcapture.capture.slime: true
+      mobcapture.capture.spider: true
+      mobcapture.capture.stray: true
+      mobcapture.capture.vex: true
+      mobcapture.capture.vindicator: true
+      mobcapture.capture.witch: true
+      mobcapture.capture.wither_skeleton: true
+      mobcapture.capture.zombie: true
+      mobcapture.capture.zombie_horse: true
+      mobcapture.capture.zombie_villager: true
+  mobcapture.capture.bat:
+    description: Allows you to capture bat mobs.
+  mobcapture.capture.blaze:
+    description: Allows you to capture blaze mobs.
+  mobcapture.capture.cave_spider:
+    description: Allows you to capture cave spider mobs.
+  mobcapture.capture.chicken:
+    description: Allows you to capture chicken mobs.
+  mobcapture.capture.cow:
+    description: Allows you to capture cow mobs.
+  mobcapture.capture.creeper:
+    description: Allows you to capture creeper mobs.
+  mobcapture.capture.donkey:
+    description: Allows you to capture donkey mobs.
+  mobcapture.capture.elder_guardian:
+    description: Allows you to capture elder guardian mobs.
+  mobcapture.capture.enderman:
+    description: Allows you to capture enderman mobs.
+  mobcapture.capture.endermite:
+    description: Allows you to capture endermite mobs.
+  mobcapture.capture.evoker:
+    description: Allows you to capture evoker mobs.
+  mobcapture.capture.ghast:
+    description: Allows you to capture ghast mobs.
+  mobcapture.capture.guardian:
+    description: Allows you to capture guardian mobs.
+  mobcapture.capture.horse:
+    description: Allows you to capture horse mobs.
+  mobcapture.capture.husk:
+    description: Allows you to capture husk mobs.
+  mobcapture.capture.llama:
+    description: Allows you to capture llama mobs.
+  mobcapture.capture.magma_cube:
+    description: Allows you to capture magma cube mobs.
+  mobcapture.capture.mule:
+    description: Allows you to capture mule mobs.
+  mobcapture.capture.mushroom_cow:
+    description: Allows you to capture mushroom cow mobs.
+  mobcapture.capture.ocelot:
+    description: Allows you to capture ocelot mobs.
+  mobcapture.capture.pig:
+    description: Allows you to capture pig mobs.
+  mobcapture.capture.pig_zombie:
+    description: Allows you to capture pig zombie mobs.
+  mobcapture.capture.polar_bear:
+    description: Allows you to capture polar bear mobs.
+  mobcapture.capture.rabbit:
+    description: Allows you to capture rabbit mobs.
+  mobcapture.capture.sheep:
+    description: Allows you to capture sheep mobs.
+  mobcapture.capture.shulker:
+    description: Allows you to capture shulker mobs.
+  mobcapture.capture.silverfish:
+    description: Allows you to capture silverfish mobs.
+  mobcapture.capture.skeleton:
+    description: Allows you to capture skeleton mobs.
+  mobcapture.capture.skeleton_horse:
+    description: Allows you to capture skeleton horse mobs.
+  mobcapture.capture.slime:
+    description: Allows you to capture slime mobs.
+  mobcapture.capture.spider:
+    description: Allows you to capture spider mobs.
+  mobcapture.capture.squid:
+    description: Allows you to capture squid mobs.
+  mobcapture.capture.stray:
+    description: Allows you to capture stray mobs.
+  mobcapture.capture.vex:
+    description: Allows you to capture vex mobs.
+  mobcapture.capture.villager:
+    description: Allows you to capture villager mobs.
+  mobcapture.capture.vindicator:
+    description: Allows you to capture vindicator mobs.
+  mobcapture.capture.witch:
+    description: Allows you to capture witch mobs.
+  mobcapture.capture.wither_skeleton:
+    description: Allows you to capture wither skeleton mobs.
+  mobcapture.capture.wolf:
+    description: Allows you to capture wolf mobs.
+  mobcapture.capture.zombie:
+    description: Allows you to capture zombie mobs.
+  mobcapture.capture.zombie_horse:
+    description: Allows you to capture zombie horse mobs.
+  mobcapture.capture.zombie_villager:
+    description: Allows you to capture zombie villager mobs.
+  mobcapture.spawn.*:
+    description: Allows you to spawn all captured mobs.
+    children:
+      mobcapture.spawn.friendly: true
+      mobcapture.spawn.agressive: true
+  mobcapture.spawn.friendly:
+    description: Allows you to spawn non-agressive mobs like animals and villager.
+    children:
+      mobcapture.spawn.bat: true
+      mobcapture.spawn.chicken: true
+      mobcapture.spawn.cow: true
+      mobcapture.spawn.donkey: true
+      mobcapture.spawn.horse: true
+      mobcapture.spawn.llama: true
+      mobcapture.spawn.mule: true
+      mobcapture.spawn.mushroom_cow: true
+      mobcapture.spawn.ocelot: true
+      mobcapture.spawn.pig: true
+      mobcapture.spawn.polar_bear: true
+      mobcapture.spawn.rabbit: true
+      mobcapture.spawn.sheep: true
+      mobcapture.spawn.squid: true
+      mobcapture.spawn.villager: true
+      mobcapture.spawn.wolf: true
+  mobcapture.spawn.agressive:
+    description: Allows you to spawn agressive mobs like monsters and zombie villager.
+    children:
+      mobcapture.spawn.blaze: true
+      mobcapture.spawn.cave_spider: true
+      mobcapture.spawn.creeper: true
+      mobcapture.spawn.elder_guardian: true
+      mobcapture.spawn.enderman: true
+      mobcapture.spawn.endermite: true
+      mobcapture.spawn.evoker: true
+      mobcapture.spawn.ghast: true
+      mobcapture.spawn.guardian: true
+      mobcapture.spawn.husk: true
+      mobcapture.spawn.magma_cube: true
+      mobcapture.spawn.pig_zombie: true
+      mobcapture.spawn.shulker: true
+      mobcapture.spawn.silverfish: true
+      mobcapture.spawn.skeleton: true
+      mobcapture.spawn.skeleton_horse: true
+      mobcapture.spawn.slime: true
+      mobcapture.spawn.spider: true
+      mobcapture.spawn.stray: true
+      mobcapture.spawn.vex: true
+      mobcapture.spawn.vindicator: true
+      mobcapture.spawn.witch: true
+      mobcapture.spawn.wither_skeleton: true
+      mobcapture.spawn.zombie: true
+      mobcapture.spawn.zombie_horse: true
+      mobcapture.spawn.zombie_villager: true
+  mobcapture.spawn.bat:
+    description: Allows you to spawn bat mobs.
+  mobcapture.spawn.blaze:
+    description: Allows you to spawn blaze mobs.
+  mobcapture.spawn.cave_spider:
+    description: Allows you to spawn cave spider mobs.
+  mobcapture.spawn.chicken:
+    description: Allows you to spawn chicken mobs.
+  mobcapture.spawn.cow:
+    description: Allows you to spawn cow mobs.
+  mobcapture.spawn.creeper:
+    description: Allows you to spawn creeper mobs.
+  mobcapture.spawn.donkey:
+    description: Allows you to spawn donkey mobs.
+  mobcapture.spawn.elder_guardian:
+    description: Allows you to spawn elder guardian mobs.
+  mobcapture.spawn.enderman:
+    description: Allows you to spawn enderman mobs.
+  mobcapture.spawn.endermite:
+    description: Allows you to spawn endermite mobs.
+  mobcapture.spawn.evoker:
+    description: Allows you to spawn evoker mobs.
+  mobcapture.spawn.ghast:
+    description: Allows you to spawn ghast mobs.
+  mobcapture.spawn.guardian:
+    description: Allows you to spawn guardian mobs.
+  mobcapture.spawn.horse:
+    description: Allows you to spawn horse mobs.
+  mobcapture.spawn.husk:
+    description: Allows you to spawn husk mobs.
+  mobcapture.spawn.llama:
+    description: Allows you to spawn llama mobs.
+  mobcapture.spawn.magma_cube:
+    description: Allows you to spawn magma cube mobs.
+  mobcapture.spawn.mule:
+    description: Allows you to spawn mule mobs.
+  mobcapture.spawn.mushroom_cow:
+    description: Allows you to spawn mushroom cow mobs.
+  mobcapture.spawn.ocelot:
+    description: Allows you to spawn ocelot mobs.
+  mobcapture.spawn.pig:
+    description: Allows you to spawn pig mobs.
+  mobcapture.spawn.pig_zombie:
+    description: Allows you to spawn pig zombie mobs.
+  mobcapture.spawn.polar_bear:
+    description: Allows you to spawn polar bear mobs.
+  mobcapture.spawn.rabbit:
+    description: Allows you to spawn rabbit mobs.
+  mobcapture.spawn.sheep:
+    description: Allows you to spawn sheep mobs.
+  mobcapture.spawn.shulker:
+    description: Allows you to spawn shulker mobs.
+  mobcapture.spawn.silverfish:
+    description: Allows you to spawn silverfish mobs.
+  mobcapture.spawn.skeleton:
+    description: Allows you to spawn skeleton mobs.
+  mobcapture.spawn.skeleton_horse:
+    description: Allows you to spawn skeleton horse mobs.
+  mobcapture.spawn.slime:
+    description: Allows you to spawn slime mobs.
+  mobcapture.spawn.spider:
+    description: Allows you to spawn spider mobs.
+  mobcapture.spawn.squid:
+    description: Allows you to spawn squid mobs.
+  mobcapture.spawn.stray:
+    description: Allows you to spawn stray mobs.
+  mobcapture.spawn.vex:
+    description: Allows you to spawn vex mobs.
+  mobcapture.spawn.villager:
+    description: Allows you to spawn villager mobs.
+  mobcapture.spawn.vindicator:
+    description: Allows you to spawn vindicator mobs.
+  mobcapture.spawn.witch:
+    description: Allows you to spawn witch mobs.
+  mobcapture.spawn.wither_skeleton:
+    description: Allows you to spawn wither skeleton mobs.
+  mobcapture.spawn.wolf:
+    description: Allows you to spawn wolf mobs.
+  mobcapture.spawn.zombie:
+    description: Allows you to spawn zombie mobs.
+  mobcapture.spawn.zombie_horse:
+    description: Allows you to spawn zombie horse mobs.
+  mobcapture.spawn.zombie_villager:
+    description: Allows you to spawn zombie villager mobs.

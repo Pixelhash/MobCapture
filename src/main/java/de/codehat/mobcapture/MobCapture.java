@@ -3,13 +3,15 @@ package de.codehat.mobcapture;
 import de.codehat.mobcapture.commands.CommandManager;
 import de.codehat.mobcapture.commands.HelpCommand;
 import de.codehat.mobcapture.commands.ReloadConfigCommand;
+import de.codehat.mobcapture.dependencies.VaultDependency;
+import de.codehat.mobcapture.dependencies.WorldGuardDependency;
 import de.codehat.mobcapture.listeners.EntityListener;
 import de.codehat.mobcapture.listeners.MobCaptureListener;
 import de.codehat.mobcapture.listeners.PlayerListener;
-import net.milkbowl.vault.economy.Economy;
+import de.codehat.mobcapture.listeners.SpawnCapturedMobListener;
 import org.bukkit.entity.Egg;
+import org.bukkit.entity.Enderman;
 import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
@@ -20,10 +22,12 @@ public class MobCapture extends JavaPlugin {
 
     // Our static logger for easy access
     public static Logger logger;
-    private static Economy econ = null;
 
+    private VaultDependency vaultDependency = null;
+    private WorldGuardDependency worldGuardDependency = null;
     private CommandManager commandManager = new CommandManager(this);
     private List<Egg> eggStorage = new ArrayList<>();
+    private List<Enderman> endermanStorage = new ArrayList<>();
 
     @Override
     public void onDisable() {
@@ -34,16 +38,27 @@ public class MobCapture extends JavaPlugin {
     }
 
     @Override
-    public void onEnable() {
+    public void onLoad() {
         logger = this.getLogger();
-
-        // Setup Vault
-        if (!setupEconomy() ) {
-            logger.severe("Vault not found! Please install it and restart the server!");
+        // Setup WorldGuard
+        try {
+            this.worldGuardDependency = new WorldGuardDependency(this);
+        } catch (NoClassDefFoundError e) {
+            logger.severe("WorldGuard is missing! Disabling 'mob protection in regions' feature...");
         }
+    }
 
+    @Override
+    public void onEnable() {
         // Save our default config if not exists
         saveDefaultConfig();
+
+        // Setup Vault / Economy support
+        try {
+            this.vaultDependency = new VaultDependency(this);
+        } catch (NoClassDefFoundError e) {
+            logger.severe("Vault is missing! Disabling 'economy' feature...");
+        }
 
         this.registerListeners();
         this.registerCommands();
@@ -67,25 +82,22 @@ public class MobCapture extends JavaPlugin {
         this.getServer().getPluginManager().registerEvents(new EntityListener(this), this);
         this.getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
         this.getServer().getPluginManager().registerEvents(new MobCaptureListener(this), this);
+        this.getServer().getPluginManager().registerEvents(new SpawnCapturedMobListener(this), this);
     }
 
-    private boolean setupEconomy() {
-        if (getServer().getPluginManager().getPlugin("Vault") == null) {
-            return false;
-        }
-        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-        if (rsp == null) {
-            return false;
-        }
-        econ = rsp.getProvider();
-        return econ != null;
+    public VaultDependency getVaultDependency() {
+        return vaultDependency;
     }
 
-    public static Economy getEconomy() {
-        return econ;
+    public WorldGuardDependency getWorldGuardDependency() {
+        return worldGuardDependency;
     }
 
     public List<Egg> getEggStorage() {
         return this.eggStorage;
+    }
+
+    public List<Enderman> getEndermanStorage() {
+        return endermanStorage;
     }
 }
