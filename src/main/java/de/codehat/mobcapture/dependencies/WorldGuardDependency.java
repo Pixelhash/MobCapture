@@ -8,7 +8,7 @@ import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
 import de.codehat.mobcapture.MobCapture;
 import org.bukkit.plugin.Plugin;
 
-public class WorldGuardDependency extends MCDependency {
+public class WorldGuardDependency extends Dependency {
 
     private WorldGuardPlugin worldGuardPlugin = null;
 
@@ -46,5 +46,9 @@ public class WorldGuardDependency extends MCDependency {
 
     public WorldGuardPlugin getWorldGuardPlugin() {
         return worldGuardPlugin;
+    }
+
+    public Flag getCaptureMobs() {
+        return captureMobs;
     }
 }

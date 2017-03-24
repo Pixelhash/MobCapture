@@ -7,144 +7,202 @@ worlds:
   - 'world1'
   - 'world2'
 
+# If enabled WorldGuard protection checks are used. Ignored if WorldGuard is not installed.
+worldguard: true
+
 capturing:
+  # If enabled the costs beneath the mobs down below are used. Ignored if Vault is not installed.
+  economy: true
+  # If enabled the chances beneath the mobs down below are used.
+  chance: true
   # A list of all mobs you can capture.
-  # Unlisted mobs are not catchable. The same applies to the 'enable' setting on each mob if it's false .
+  # Unlisted mobs are not catchable. The same applies to the 'enable' setting on each mob if it's false.
   # If Vault isn't installed, the 'costs' settings are ignored.
   mobs:
     default:
-      # Default 'costs' value if you leave it out on the other mobs.
+      # Default 'costs' value if you leave it out on certain mobs.
       costs: 100.0
+      # Default 'chance' value if you leave it out on certain mobs. Examples: 0.1 = 10% and 1.0 = 100%
+      # To disable 'chance' on certain mobs, set their 'chance' equals -1
+      chance: 0.5
     BAT:
       enable: true
       costs: 10.0
+      chance: 0.75
     BLAZE:
       enable: true
       costs: 80.0
+      chance: 0.25
     CAVE_SPIDER:
       enable: true
       costs: 50.0
+      chance: 0.3
     CHICKEN:
       enable: true
       costs: 15.0
+      chance: 0.9
     COW:
       enable: true
       costs: 25.0
+      chance: 0.9
     CREEPER:
       enable: true
       costs: 50.0
+      chance: 0.4
     DONKEY:
       enable: true
+      costs: 80.0
+      chance: 0.75
     ELDER_GUARDIAN:
       enable: false
       costs: 150.0
+      chance: 0.1
     ENDERMAN:
       enable: true
       costs: 50.0
+      chance: 0.2
     ENDERMITE:
       enable: true
       costs: 20.0
+      chance: 0.2
     EVOKER:
       enable: true
       costs: 75.0
+      chance: 0.3
     GHAST:
       enable: true
       costs: 40.0
+      chance: 0.2
     GUARDIAN:
       enable: true
       costs: 35.0
+      chance: 0.4
     HORSE:
       enable: true
+      costs: 80.0
+      chance: 0.5
     HUSK:
       enable: true
       costs: 70.0
+      chance: 0.3
     LLAMA:
       enable: true
       costs: 70.0
+      chance: 0.5
     MAGMA_CUBE:
       enable: true
       costs: 80.0
+      chance: 0.3
     MULE:
       enable: true
+      costs: 80.0
+      chance: 0.5
     MUSHROOM_COW:
       enable: true
       costs: 65.0
+      chance: 0.8
     OCELOT:
       enable: true
       costs: 25.0
+      chance: 0.6
     PIG:
       enable: true
       costs: 20.0
+      chance: 0.9
     PIG_ZOMBIE:
       enable: true
       costs: 75.0
+      chance: 0.25
     POLAR_BEAR:
       enable: true
       costs: 65.0
+      chance: 0.3
     RABBIT:
       enable: true
       costs: 25.0
+      chance: 0.7
     SHEEP:
       enable: true
       costs: 25.0
+      chance: 0.9
     SHULKER:
       enable: true
       costs: 95.0
+      chance: 0.2
     SILVERFISH:
       enable: false
       costs: 25.0
+      chance: 0.3
     SKELETON:
       enable: true
       costs: 75.0
+      chance: 0.4
     SKELETON_HORSE:
       enable: false
       costs: 85.0
+      chance: 0.05
     SLIME:
       enable: true
       costs: 50.0
+      chance: 0.4
     SPIDER:
       enable: true
       costs: 55.0
+      chance: 0.3
     SQUID:
       enable: true
       costs: 25.0
+      chance: 0.7
     STRAY:
       enable: true
       costs: 75.0
+      chance: 0.3
     VEX:
       enable: true
       costs: 40.0
+      chance: 0.4
     VILLAGER:
       enable: true
       costs: 95.0
+      chance: 0.6
     VINDICATOR:
       enable: true
       costs: 85.0
+      chance: 0.3
     WITCH:
       enable: true
       costs: 65.0
+      chance: 0.4
     WITHER_SKELETON:
       enable: true
       costs: 25.0
+      chance: 0.1
     WOLF:
       enable: true
       costs: 80.0
+      chance: 0.8
     ZOMBIE:
       enable: true
       costs: 65.0
+      chance: 0.3
     ZOMBIE_HORSE:
       enable: false
       costs: 85.0
+      chance: 0.05
     ZOMBIE_VILLAGER:
       enable: true
       costs: 65.0
+      chance: 0.2
 
 # Settings of the particles, which are spawned upon capturing a mob.
 particle:
   enable: true
+
   # List of possible values can be found here (https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Particle.html).
   type: 'SMOKE_NORMAL'
+
   amount: 50
+
   # Same values as in the default '/particle' command (http://minecraft.gamepedia.com/Commands#particle).
   xd: 0.0
   yd: 0.0
@@ -154,8 +212,10 @@ particle:
 # Settings of the sound, which is played upon capturing a mob.
 sound:
   enable: true
+
   # List of possible values can be found here (https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Sound.html).
   type: 'ENTITY_BLAZE_SHOOT'
+
   volume: 1.0
   pitch: 1.25
 

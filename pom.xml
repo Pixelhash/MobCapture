@@ -9,6 +9,10 @@
     <version>0.1.0-SNAPSHOT</version>
     <name>MobCapture</name>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
     <repositories>
         <repository>
             <id>spigot-repo</id>

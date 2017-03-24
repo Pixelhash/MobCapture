@@ -12,11 +12,14 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerEggThrowEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.material.Colorable;
 import org.bukkit.material.MaterialData;
+import org.spigotmc.event.entity.EntityMountEvent;
 
 import java.util.HashMap;
 import java.util.List;
@@ -119,6 +122,11 @@ public class PlayerListener implements Listener {
             ((Tameable) e).setTamed(Boolean.valueOf(s));
         });
 
+        // Carrying chest
+        this.attributeFunctions.put("chest", (m, e, s) -> {
+            ((ChestedHorse) e).setCarryingChest(Boolean.valueOf(s));
+        });
+
         // Owner
         this.attributeFunctions.put("uuid", (m, e, s) -> {
             ((Tameable) e).setOwner(this.plugin.getServer().getOfflinePlayer(UUID.fromString(s)));
@@ -187,6 +195,20 @@ public class PlayerListener implements Listener {
             }
         }
         event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onEntityRightClick(EntityMountEvent event) {
+        if (!(event.getEntity() instanceof Player)) return;
+
+        Player player = (Player) event.getEntity();
+        ItemStack item = player.getInventory().getItemInMainHand();
+        if (item.getType().equals(Material.EGG)) {
+            Egg egg = player.launchProjectile(Egg.class);
+            egg.setShooter(player);
+            egg.setVelocity(player.getLocation().getDirection());
+            event.setCancelled(true);
+        }
     }
 
 }

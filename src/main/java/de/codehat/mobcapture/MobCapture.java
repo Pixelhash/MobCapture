@@ -10,10 +10,10 @@ import de.codehat.mobcapture.listeners.MobCaptureListener;
 import de.codehat.mobcapture.listeners.PlayerListener;
 import de.codehat.mobcapture.listeners.SpawnCapturedMobListener;
 import org.bukkit.entity.Egg;
-import org.bukkit.entity.Enderman;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -27,7 +27,6 @@ public class MobCapture extends JavaPlugin {
     private WorldGuardDependency worldGuardDependency = null;
     private CommandManager commandManager = new CommandManager(this);
     private List<Egg> eggStorage = new ArrayList<>();
-    private List<Enderman> endermanStorage = new ArrayList<>();
 
     @Override
     public void onDisable() {
@@ -50,15 +49,18 @@ public class MobCapture extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        // Save our default config if not exists
-        saveDefaultConfig();
-
         // Setup Vault / Economy support
         try {
             this.vaultDependency = new VaultDependency(this);
         } catch (NoClassDefFoundError e) {
             logger.severe("Vault is missing! Disabling 'economy' feature...");
         }
+
+        // Create all necessary folders
+        this.setupStorageFolders();
+
+        // Save our default config if not exists
+        this.saveDefaultConfig();
 
         this.registerListeners();
         this.registerCommands();
@@ -85,6 +87,34 @@ public class MobCapture extends JavaPlugin {
         this.getServer().getPluginManager().registerEvents(new SpawnCapturedMobListener(this), this);
     }
 
+    private void setupStorageFolders() {
+        this.getDataFolder().mkdir();
+        new File(this.getDataFolder(), "equipments").mkdir();
+        new File(this.getDataFolder(), "inventories").mkdir();
+    }
+
+    /**
+     * Checks if WorldGuard is installed and enabled in config.
+     *
+     * @return true if installed and enabled, false if not installed or disabled.
+     */
+    public boolean isWorldGuardAvailable() {
+        return this.worldGuardDependency != null
+                && this.worldGuardDependency.getWorldGuardPlugin() != null
+                && this.getConfig().getBoolean("worldguard");
+    }
+
+    /**
+     * Checks if Vault is installed and enabled in config.
+     *
+     * @return true if installed and enabled, false if not installed or disabled.
+     */
+    public boolean isEconomyAvailable() {
+        return this.vaultDependency != null
+                && this.vaultDependency.getEconomy() != null
+                && this.getConfig().getBoolean("capturing.economy");
+    }
+
     public VaultDependency getVaultDependency() {
         return vaultDependency;
     }
@@ -95,9 +125,5 @@ public class MobCapture extends JavaPlugin {
 
     public List<Egg> getEggStorage() {
         return this.eggStorage;
-    }
-
-    public List<Enderman> getEndermanStorage() {
-        return endermanStorage;
     }
 }

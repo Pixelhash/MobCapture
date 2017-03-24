@@ -4,7 +4,7 @@ import de.codehat.mobcapture.MobCapture;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
-public class VaultDependency extends MCDependency {
+public class VaultDependency extends Dependency {
 
     private Economy economy = null;
 

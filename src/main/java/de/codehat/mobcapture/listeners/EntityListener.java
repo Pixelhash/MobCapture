@@ -2,9 +2,11 @@ package de.codehat.mobcapture.listeners;
 
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import de.codehat.mobcapture.MobCapture;
 import de.codehat.mobcapture.events.PlayerCaptureMobEvent;
+import de.codehat.mobcapture.util.InventoryUtil;
 import de.codehat.mobcapture.util.Message;
 import de.codehat.mobcapture.util.MonsterType;
 import org.bukkit.*;
@@ -14,184 +16,294 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityTeleportEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.material.Colorable;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 
 public class EntityListener implements Listener {
 
     private MobCapture plugin;
     private DecimalFormat decimalFormat = new DecimalFormat("#.0");
+    private final Random random = new Random();
 
     public EntityListener(MobCapture plugin) {
         this.plugin = plugin;
     }
 
     @EventHandler
-    public void onEntityDamageWithEgg(EntityDamageEvent event) {
-
-        if (!(event instanceof EntityDamageByEntityEvent)) {
-            return;
-        }
-
+    public void onEntityDamageWithEgg(EntityDamageByEntityEvent event) {
+        // Check if entity is a living entity
         if (!(event.getEntity() instanceof LivingEntity)) {
             return;
         }
+        // The damaged living entity
         LivingEntity entity = (LivingEntity) event.getEntity();
 
-        EntityDamageByEntityEvent damageByEntityEvent = (EntityDamageByEntityEvent) event;
-
-        if (!(damageByEntityEvent.getDamager() instanceof Egg)) {
+        // If not hit by an egg return
+        if (!(event.getDamager() instanceof Egg)) {
             return;
         }
+        // The egg, which caused damage
+        Egg egg = (Egg) event.getDamager();
 
-        Egg egg = (Egg) damageByEntityEvent.getDamager();
+        // Check if the entity can be spawned by MobCapture
         MonsterType monsterType = MonsterType.getEggType(entity);
-
+        // If monster cannot be found (spawned) return
         if (monsterType == null) {
             return;
         }
 
-        if (this.plugin.getConfig().getList("worlds.disabled").contains(entity.getWorld().getName())) {
+        // Check if the world the entity is living in is disabled. If disabled return
+        if (this.isInDisabledWorld(entity.getWorld().getName())) {
             return;
         }
 
-        if (egg.getShooter() instanceof Player) {
-            Player player = (Player) egg.getShooter();
+        // Check if the shooter was a player
+        if (!(egg.getShooter() instanceof Player)) {
+            return;
+        }
+        // The player, who shot the egg
+        Player player = (Player) egg.getShooter();
 
-            if (this.plugin.getWorldGuardDependency() != null && this.plugin.getWorldGuardDependency().getWorldGuardPlugin() != null) {
-                LocalPlayer localPlayer = this.plugin.getWorldGuardDependency().getWorldGuardPlugin().wrapPlayer(player);
-                ApplicableRegionSet regions = this.plugin.getWorldGuardDependency().getWorldGuardPlugin().getRegionManager(entity.getWorld()).getApplicableRegions(entity.getLocation());
-                for(ProtectedRegion region : regions) {
-                    MobCapture.logger.info("Region: " + region.getId());
-                    if (!region.getOwners().contains(localPlayer)) {
-                        Message.sendWithLogo(player, "&cYou can't catch mobs from others regions.");
-                        event.setCancelled(true);
-                        return;
-                    }
+        // Check if WorldGuard is available
+        //TODO: Move to PlayerCaptureMobEvent???
+        if (this.plugin.isWorldGuardAvailable()) {
+            // Wrapped WorldGuard player
+            LocalPlayer localPlayer = this.plugin.getWorldGuardDependency().getWorldGuardPlugin().wrapPlayer(player);
+            // List of regions the entity is currently in.
+            ApplicableRegionSet regions = this.plugin.getWorldGuardDependency().getWorldGuardPlugin()
+                    .getRegionManager(entity.getWorld()).getApplicableRegions(entity.getLocation());
+            // Check if entity is in a known region
+            if (regions.iterator().hasNext()) {
+                // First region the entity is standing in
+                ProtectedRegion region = regions.iterator().next();
+                MobCapture.logger.info("Region: " + region.getId());
+                // Check if player is either a member or an owner of the region. If not cancel event.
+                if (!region.getOwners().contains(localPlayer) || region.getMembers().contains(localPlayer)) {
+                    Message.sendWithLogo(player, "&cYou aren't allowed to catch mobs here.");
+                    // Add thrown egg to storage for PlayerEggThrowEvent
+                    this.plugin.getEggStorage().add(egg);
+                    // Cancel event
+                    event.setCancelled(true);
+                    return;
                 }
             }
-
-            List<String> lore = new ArrayList<>();
-
-            lore.add(Message.replaceColors("&9Mob: &e") + monsterType.getCreatureType());
-
-            if (entity instanceof Ocelot) {
-                lore.add(Message.replaceColors("&9Cat Type: &e" + ((Ocelot) entity).getCatType()));
-            } else if (entity instanceof Horse) {
-                lore.add(Message.replaceColors("&9Style: &e" + ((Horse) entity).getStyle()));
-                lore.add(Message.replaceColors("&9Horse Color: &e" + ((Horse) entity).getColor()));
-            } else if (entity instanceof Villager) {
-                lore.add(Message.replaceColors("&9Profession: &e" + ((Villager) entity).getProfession()));
-            } else if (entity instanceof Sheep) {
-                lore.add(Message.replaceColors("&9Sheared: &e" + ((Sheep) entity).isSheared()));
-            } else if (entity instanceof Wolf) {
-                lore.add(Message.replaceColors("&9Collar Color: &e" + ((Wolf) entity).getCollarColor()));
-                lore.add(Message.replaceColors("&9Angry: &e" + ((Wolf) entity).isAngry()));
-            } else if (entity instanceof ZombieVillager) {
-                lore.add(Message.replaceColors("&9Profession: &e" + ((ZombieVillager) entity).getVillagerProfession()));
-            } else if (entity instanceof Slime) {
-                lore.add(Message.replaceColors("&9Size: &e" + ((Slime) entity).getSize()));
-            } else if (entity instanceof Llama) {
-                lore.add(Message.replaceColors("&9Llama Color: &e" + ((Llama) entity).getColor()));
-                lore.add(Message.replaceColors("&9Strength: &e" + ((Llama) entity).getStrength()));
-            } else if (entity instanceof Creeper) {
-                lore.add(Message.replaceColors("&9Powered: &e" + ((Creeper) entity).isPowered()));
-            } else if (entity instanceof Enderman) {
-                lore.add(Message.replaceColors("&9Block: &e" + ((Enderman) entity).getCarriedMaterial().getItemType()));
-            } else if (entity instanceof Rabbit) {
-                lore.add(Message.replaceColors("&9Rabbit Type: &e" + ((Rabbit) entity).getRabbitType()));
-            }
-
-            if(entity.getCustomName() != null) {
-                lore.add(Message.replaceColors("&9Name: &e" + entity.getCustomName()));
-            }
-
-            lore.add(Message.replaceColors(String.format(
-                    "&9Health: &e%s/%s",
-                    decimalFormat.format(entity.getHealth()),
-                    decimalFormat.format(entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue())
-            )));
-
-            if (entity instanceof Ageable) {
-                Ageable ageable = (Ageable) entity;
-                if (ageable.isAdult()) {
-                    lore.add(Message.replaceColors("&9Age: &eAdult"));
-                } else {
-                    lore.add(Message.replaceColors("&9Age: &eBaby"));
-                }
-            } else if (entity instanceof Zombie) {
-                Zombie zombie = (Zombie) entity;
-                if (!zombie.isBaby()) {
-                    lore.add(Message.replaceColors("&9Baby: &efalse"));
-                } else {
-                    lore.add(Message.replaceColors("&9Baby: &etrue"));
-                }
-            }
-
-            if (entity instanceof Colorable) {
-                Colorable colorable = (Colorable) entity;
-                //TODO: Add color of message based on entity color
-                lore.add(Message.replaceColors("&9Color: &e" + colorable.getColor()));
-            }
-
-            if (entity instanceof Tameable) {
-                //TODO: Cast directly instead of new object
-                Tameable tameable = (Tameable) entity;
-                lore.add(Message.replaceColors("&9Tamed: &e" + tameable.isTamed()));
-                if (tameable.isTamed()) {
-                    lore.add(Message.replaceColors("&9Owner: &e" + tameable.getOwner().getName()));
-                    lore.add(Message.replaceColors("&9UUID: &e" + tameable.getOwner().getUniqueId()));
-                }
-            }
-
-            ItemStack mobEgg = new ItemStack(Material.MONSTER_EGG, 1);
-            SpawnEggMeta spawnEggMeta = (SpawnEggMeta) mobEgg.getItemMeta();
-            spawnEggMeta.setSpawnedType(entity.getType());
-            spawnEggMeta.setLore(lore);
-            mobEgg.setItemMeta(spawnEggMeta);
-
-            PlayerCaptureMobEvent playerCaptureMobEvent = new PlayerCaptureMobEvent(mobEgg, player, entity);
-            Bukkit.getPluginManager().callEvent(playerCaptureMobEvent);
-
-            if (playerCaptureMobEvent.isCancelled()) {
-                if (!player.getGameMode().equals(GameMode.CREATIVE)) player.getInventory().addItem(new ItemStack(Material.EGG, 1));
+            // No explicit region found, so check flag of '__global__' region. Cancel event if denied
+            if (!regions.testState(localPlayer, (StateFlag) this.plugin.getWorldGuardDependency().getCaptureMobs())) {
+                Message.sendWithLogo(player, "&cCaching mobs is disabled here.");
                 this.plugin.getEggStorage().add(egg);
                 event.setCancelled(true);
                 return;
             }
-            event.setCancelled(true);
-            entity.remove();
-            if (this.plugin.getConfig().getBoolean("particle.enable")) {
-                entity.getWorld().spawnParticle(
-                        Particle.valueOf(this.plugin.getConfig().getString("particle.type")),
-                        entity.getLocation(),
-                        this.plugin.getConfig().getInt("particle.amount"),
-                        this.plugin.getConfig().getDouble("particle.xd"),
-                        this.plugin.getConfig().getDouble("particle.yd"),
-                        this.plugin.getConfig().getDouble("particle.zd"),
-                        this.plugin.getConfig().getDouble("particle.velocity")
-                );
-            }
-
-            if (this.plugin.getConfig().getBoolean("sound.enable")) {
-                entity.getWorld().playSound(
-                        entity.getLocation(),
-                        Sound.valueOf(this.plugin.getConfig().getString("sound.type")),
-                        this.plugin.getConfig().getInt("sound.volume"),
-                        this.plugin.getConfig().getInt("sound.pitch")
-                );
-            }
-            this.plugin.getEggStorage().add(egg);
-            entity.getWorld().dropItem(entity.getLocation(), playerCaptureMobEvent.getSpawnEggStack());
         }
+        // The lore for our spawn egg.
+        List<String> lore = this.buildLore(entity);
+
+        ItemStack mobEgg = new ItemStack(Material.MONSTER_EGG, 1);
+        SpawnEggMeta spawnEggMeta = (SpawnEggMeta) mobEgg.getItemMeta();
+        spawnEggMeta.setSpawnedType(entity.getType());
+        spawnEggMeta.setLore(lore);
+        mobEgg.setItemMeta(spawnEggMeta);
+
+        PlayerCaptureMobEvent playerCaptureMobEvent = new PlayerCaptureMobEvent(mobEgg, player, entity);
+        Bukkit.getPluginManager().callEvent(playerCaptureMobEvent);
+
+        if (playerCaptureMobEvent.isCancelled()) {
+            if (!player.getGameMode().equals(GameMode.CREATIVE))
+                player.getInventory().addItem(new ItemStack(Material.EGG, 1));
+            this.plugin.getEggStorage().add(egg);
+            event.setCancelled(true);
+            return;
+        }
+        event.setCancelled(true);
+        entity.remove();
+        this.playEffectAndSoundIfEnabled(entity);
+        this.plugin.getEggStorage().add(egg);
+        entity.getUniqueId();
+        Item item = entity.getWorld().dropItem(entity.getLocation(), playerCaptureMobEvent.getSpawnEggStack());
+        //MobCapture.logger.info(item.getUniqueId().toString());
+    }
+
+    private void playEffectAndSoundIfEnabled(LivingEntity entity) {
+        if (this.plugin.getConfig().getBoolean("particle.enable")) {
+            this.playEffect(entity);
+        }
+        if (this.plugin.getConfig().getBoolean("sound.enable")) {
+            this.playSound(entity);
+        }
+    }
+
+    private void playSound(LivingEntity entity) {
+        entity.getWorld().playSound(
+                entity.getLocation(),
+                Sound.valueOf(this.plugin.getConfig().getString("sound.type")),
+                this.plugin.getConfig().getInt("sound.volume"),
+                this.plugin.getConfig().getInt("sound.pitch")
+        );
+    }
+
+    private void playEffect(LivingEntity entity) {
+        entity.getWorld().spawnParticle(
+                Particle.valueOf(this.plugin.getConfig().getString("particle.type")),
+                entity.getLocation(),
+                this.plugin.getConfig().getInt("particle.amount"),
+                this.plugin.getConfig().getDouble("particle.xd"),
+                this.plugin.getConfig().getDouble("particle.yd"),
+                this.plugin.getConfig().getDouble("particle.zd"),
+                this.plugin.getConfig().getDouble("particle.velocity")
+        );
+    }
+
+    private List<String> buildLore(LivingEntity entity) {
+        List<String> lore = new ArrayList<>();
+        lore.add(Message.replaceColors("&9Mob: &e") + entity.getType().toString());//monsterType.getCreatureType());
+
+        if (entity.getCustomName() != null) {
+            lore.add(Message.replaceColors("&9Name: &e" + entity.getCustomName()));
+        }
+
+        if (entity instanceof Ocelot) {
+            lore.add(Message.replaceColors("&9Cat Type: &e" + ((Ocelot) entity).getCatType()));
+        } else if (entity instanceof Horse) {
+            lore.add(Message.replaceColors("&9Style: &e" + ((Horse) entity).getStyle()));
+            lore.add(Message.replaceColors("&9Horse Color: &e" + ((Horse) entity).getColor()));
+        } else if (entity instanceof Villager) {
+            lore.add(Message.replaceColors("&9Profession: &e" + ((Villager) entity).getProfession()));
+        } else if (entity instanceof Sheep) {
+            lore.add(Message.replaceColors("&9Sheared: &e" + ((Sheep) entity).isSheared()));
+        } else if (entity instanceof Wolf) {
+            lore.add(Message.replaceColors("&9Collar Color: &e" + ((Wolf) entity).getCollarColor()));
+            lore.add(Message.replaceColors("&9Angry: &e" + ((Wolf) entity).isAngry()));
+        } else if (entity instanceof ZombieVillager) {
+            lore.add(Message.replaceColors("&9Profession: &e" + ((ZombieVillager) entity).getVillagerProfession()));
+        } else if (entity instanceof Slime) {
+            lore.add(Message.replaceColors("&9Size: &e" + ((Slime) entity).getSize()));
+        } else if (entity instanceof Llama) {
+            lore.add(Message.replaceColors("&9Llama Color: &e" + ((Llama) entity).getColor()));
+            lore.add(Message.replaceColors("&9Strength: &e" + ((Llama) entity).getStrength()));
+        } else if (entity instanceof Creeper) {
+            lore.add(Message.replaceColors("&9Powered: &e" + ((Creeper) entity).isPowered()));
+        } else if (entity instanceof Enderman) {
+            lore.add(Message.replaceColors("&9Block: &e" + ((Enderman) entity).getCarriedMaterial().getItemType()));
+        } else if (entity instanceof Rabbit) {
+            lore.add(Message.replaceColors("&9Rabbit Type: &e" + ((Rabbit) entity).getRabbitType()));
+        }
+
+        lore.add(Message.replaceColors(String.format(
+                "&9Health: &e%s/%s",
+                decimalFormat.format(entity.getHealth()),
+                decimalFormat.format(entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue())
+        )));
+
+        if (entity instanceof Ageable) {
+            Ageable ageable = (Ageable) entity;
+            if (ageable.isAdult()) {
+                lore.add(Message.replaceColors("&9Age: &eAdult"));
+            } else {
+                lore.add(Message.replaceColors("&9Age: &eBaby"));
+            }
+        } else if (entity instanceof Zombie) {
+            Zombie zombie = (Zombie) entity;
+            if (!zombie.isBaby()) {
+                lore.add(Message.replaceColors("&9Baby: &efalse"));
+            } else {
+                lore.add(Message.replaceColors("&9Baby: &etrue"));
+            }
+        }
+
+        if (entity instanceof Colorable) {
+            Colorable colorable = (Colorable) entity;
+            //TODO: Add color of message based on entity color
+            lore.add(Message.replaceColors("&9Color: &e" + colorable.getColor()));
+        }
+
+        if (entity instanceof Tameable) {
+            //TODO: Cast directly instead of new object
+            Tameable tameable = (Tameable) entity;
+            lore.add(Message.replaceColors("&9Tamed: &e" + tameable.isTamed()));
+            if (tameable.isTamed()) {
+                lore.add(Message.replaceColors("&9Owner: &e" + tameable.getOwner().getName()));
+                lore.add(Message.replaceColors("&9UUID: &e" + tameable.getOwner().getUniqueId()));
+            }
+        }
+
+        if (entity instanceof ChestedHorse) {
+            lore.add(Message.replaceColors("&9Chest: &e" + ((ChestedHorse) entity).isCarryingChest()));
+        }
+
+        if (entity instanceof InventoryHolder && !this.isInventoryEmpty(((InventoryHolder) entity).getInventory())) {
+            InventoryHolder inventoryHolder = (InventoryHolder) entity;
+            String enc = InventoryUtil.toBase64(inventoryHolder.getInventory());
+            UUID uuid = UUID.randomUUID();
+            try {
+                //Files.write(Paths.get(this.plugin.getDataFolder().getAbsolutePath() + File.separator + uuid + ".inv"), enc.getBytes());
+                InventoryUtil.saveInventory(this.plugin.getDataFolder().getAbsolutePath(), inventoryHolder.getInventory(), null);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            lore.add(Message.replaceColors("&9Inventory: &e" + uuid));
+        }
+
+        if (this.hasEquipment(entity.getEquipment())) {
+            String armor = InventoryUtil.toBase64(entity.getEquipment().getArmorContents());
+            String itemMainHand = InventoryUtil.toBase64(entity.getEquipment().getItemInMainHand());
+            String itemOffHand = InventoryUtil.toBase64(entity.getEquipment().getItemInOffHand());
+            String all = armor + ":" + itemMainHand + ":" + itemOffHand;
+            UUID uuid = UUID.randomUUID();
+            try {
+                //Files.write(Paths.get(this.plugin.getDataFolder().getAbsolutePath() + File.separator + uuid + ".eqpm"), all.getBytes());
+                InventoryUtil.saveEqipment(this.plugin.getDataFolder().getAbsolutePath(), entity.getEquipment(), null);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            lore.add(Message.replaceColors("&9Equipment: &e" + uuid));
+        }
+
+        return lore;
+    }
+
+    private boolean isInventoryEmpty(Inventory inventory) {
+        for (ItemStack itemStack : inventory.getContents()) {
+            if (itemStack != null) MobCapture.logger.info(itemStack.getType().toString());
+            if (itemStack != null) return false;
+        }
+
+        return true;
+    }
+
+    private boolean hasEquipment(EntityEquipment equipment) {
+        if (!equipment.getItemInMainHand().getType().equals(Material.AIR)
+                || !equipment.getItemInOffHand().getType().equals(Material.AIR)) {
+            return true;
+        }
+
+        for (ItemStack itemStack : equipment.getArmorContents()) {
+            MobCapture.logger.info(itemStack.getType().toString());
+            if (!itemStack.getType().equals(Material.AIR)) return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if the given world is in the list of disabled worlds.
+     *
+     * @param world Name of the world to check.
+     * @return true if disabled, false if enabled.
+     */
+    private boolean isInDisabledWorld(String world) {
+        return this.plugin.getConfig().getList("worlds.disabled").contains(world);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -229,7 +341,7 @@ public class EntityListener implements Listener {
 
             lore.add(Message.replaceColors("&9Block: &e" + ((Enderman) entity).getCarriedMaterial().getItemType()));
 
-            if(entity.getCustomName() != null) {
+            if (entity.getCustomName() != null) {
                 lore.add(Message.replaceColors("&9Name: &e" + entity.getCustomName()));
             }
 
@@ -249,7 +361,8 @@ public class EntityListener implements Listener {
             Bukkit.getPluginManager().callEvent(playerCaptureMobEvent);
 
             if (playerCaptureMobEvent.isCancelled()) {
-                if (!player.getGameMode().equals(GameMode.CREATIVE)) player.getInventory().addItem(new ItemStack(Material.EGG, 1));
+                if (!player.getGameMode().equals(GameMode.CREATIVE))
+                    player.getInventory().addItem(new ItemStack(Material.EGG, 1));
                 this.plugin.getEggStorage().add(egg);
                 return;
             }
@@ -278,27 +391,4 @@ public class EntityListener implements Listener {
             entity.getWorld().dropItem(egg.getLocation(), playerCaptureMobEvent.getSpawnEggStack());
         }
     }
-
-    /*@EventHandler(priority = EventPriority.LOW)
-    public void onEndermanTeleport(EntityTeleportEvent event) {
-        if (!(event.getEntity() instanceof LivingEntity)) {
-            return;
-        }
-
-        LivingEntity entity = (LivingEntity) event.getEntity();
-
-        if(!(entity instanceof Enderman)) {
-            return;
-        }
-        System.out.println("CHECK");
-        this.plugin.getServer().getScheduler().runTaskLater(this.plugin, () -> {
-            Enderman enderman = (Enderman) entity;
-            if (this.plugin.getEndermanStorage().contains(enderman)) {
-                System.out.println("PREVENT");
-                event.setCancelled(true);
-                enderman.teleport(event.getFrom());
-                this.plugin.getEndermanStorage().remove(enderman);
-            }
-        }, 20L);
-    }*/
 }

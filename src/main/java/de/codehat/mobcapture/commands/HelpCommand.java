@@ -16,10 +16,10 @@ public class HelpCommand extends AbstractCommand{
         if (!sender.hasPermission("mobcapture.help")) {
             Message.sendWithLogo(sender, "&cYou don't have permission.");
         } else {
-            Message.send(sender, "&8+--------&9[&eMobCapture&9]&8--------+");
+            Message.send(sender, "&8+----------&9[&eMobCapture&9]&8----------+");
             Message.send(sender, "&7/mc help &e--- &7Shows this page.");
             Message.send(sender, "&7/mc reload &e--- &7Reloads the config.");
-            Message.send(sender, "&8+----------------------------+");
+            Message.send(sender, "&8+------------------------------+");
         }
     }
 }

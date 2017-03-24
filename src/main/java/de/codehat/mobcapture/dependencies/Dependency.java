@@ -2,11 +2,11 @@ package de.codehat.mobcapture.dependencies;
 
 import de.codehat.mobcapture.MobCapture;
 
-public abstract class MCDependency {
+public abstract class Dependency {
 
     private MobCapture plugin;
 
-    public MCDependency(MobCapture plugin) {
+    Dependency(MobCapture plugin) {
         this.plugin = plugin;
     }
 
