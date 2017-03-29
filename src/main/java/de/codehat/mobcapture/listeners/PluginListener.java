@@ -1,12 +1,13 @@
-package de.codehat.mobcapture.dependencies;
+package de.codehat.mobcapture.listeners;
 
 import de.codehat.mobcapture.MobCapture;
+import org.bukkit.event.Listener;
 
-public abstract class Dependency {
+public abstract class PluginListener implements Listener {
 
     private MobCapture plugin;
 
-    public Dependency(MobCapture plugin) {
+    public PluginListener(MobCapture plugin) {
         this.plugin = plugin;
     }
 

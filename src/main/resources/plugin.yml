@@ -2,7 +2,7 @@ name: MobCapture
 main: de.codehat.mobcapture.MobCapture
 author: CodeHat
 website: https://www.spigotmc.org/none
-softdepend: [Vault, WorldGuard]
+softdepend: [Vault, WorldGuard, ProtocolLib]
 description: Catch mobs with eggs.
 version: 0.1.0
 
@@ -16,9 +16,12 @@ permissions:
   mobcapture.*:
     description: Access to all features.
     children:
+      mobcapture.show.equipment: true
       mobcapture.help: true
       mobcapture.reload: true
       mobcapture.spawnandcapture: true
+  mobcapture.show.equipment:
+    description: Allows you to look into the mob's equipment inventory.
   mobcapture.help:
     description: Access to the help page.
   mobcapture.reload:

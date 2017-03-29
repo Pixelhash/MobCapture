@@ -3,6 +3,7 @@ package de.codehat.mobcapture.listeners;
 import de.codehat.mobcapture.MobCapture;
 import de.codehat.mobcapture.events.PlayerCaptureMobEvent;
 import de.codehat.mobcapture.events.PlayerSpawnCapturedMobEvent;
+import de.codehat.mobcapture.util.InventoryUtil;
 import de.codehat.mobcapture.util.Message;
 import de.codehat.mobcapture.util.TriConsumer;
 import org.bukkit.*;
@@ -11,10 +12,14 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerEggThrowEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.material.Colorable;
@@ -27,14 +32,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class PlayerListener implements Listener {
+public class PlayerListener extends PluginListener {
 
-    private MobCapture plugin;
     //TODO: Remove 'TriConsumer' and set to 'BiConsumer' by removing the String (value) and get it from the map.
     private Map<String, TriConsumer<Map<String, String>, LivingEntity, String>> attributeFunctions = new HashMap<>();
 
     public PlayerListener(MobCapture plugin) {
-        this.plugin = plugin;
+        super(plugin);
         this.setupAttributeFunctions();
     }
 
@@ -129,15 +133,27 @@ public class PlayerListener implements Listener {
 
         // Owner
         this.attributeFunctions.put("uuid", (m, e, s) -> {
-            ((Tameable) e).setOwner(this.plugin.getServer().getOfflinePlayer(UUID.fromString(s)));
+            ((Tameable) e).setOwner(this.getPlugin().getServer().getOfflinePlayer(UUID.fromString(s)));
+        });
+
+        // Equipment
+        this.attributeFunctions.put("equipment", (m, e, s) -> {
+            String id = InventoryUtil.revealText(s.split("Yes")[1]);
+            InventoryUtil.restoreEquipment(this.getPlugin().getDataFolder().getAbsolutePath(), id, e.getEquipment());
+        });
+
+        // Inventory
+        this.attributeFunctions.put("inventory", (m, e, s) -> {
+            String id = InventoryUtil.revealText(s.split("Yes")[1]);
+            ((InventoryHolder) e).getInventory().setContents(InventoryUtil.restoreInventory(this.getPlugin().getDataFolder().getAbsolutePath(), id));
         });
     }
 
     @EventHandler
     public void onPlayerEggThrowEvent(PlayerEggThrowEvent event) {
-        if (this.plugin.getEggStorage().contains(event.getEgg())) {
+        if (this.getPlugin().getEggStorage().contains(event.getEgg())) {
             event.setHatching(false);
-            this.plugin.getEggStorage().remove(event.getEgg());
+            this.getPlugin().getEggStorage().remove(event.getEgg());
         }
     }
 
@@ -180,13 +196,21 @@ public class PlayerListener implements Listener {
         }
 
         List<String> lore = spawnEgg.getItemMeta().getLore();
-        List<String> noColorLore = lore.stream().map(ChatColor::stripColor).collect(Collectors.toList());
+        //List<String> noColorLore = lore.stream().map(ChatColor::stripColor).collect(Collectors.toList());
+        List<String> noColorLore = lore.stream().map(s -> {
+            if (s.startsWith("§9Inventory:") || s.startsWith("§9Equipment:")) {
+                return s;
+            } else {
+                return ChatColor.stripColor(s);
+            }
+        }).collect(Collectors.toList());
         Map<String, String> entityDataMap = noColorLore.stream().collect(Collectors.toMap(
-                s -> s.split(": ")[0].trim().toLowerCase(),
+                s -> ChatColor.stripColor(s.split(": ")[0].trim().toLowerCase()),
                 s -> s.split(": ")[1].trim()
         ));
 
         LivingEntity entity = (LivingEntity) player.getWorld().spawnEntity(spawnMobLocation, entityType);
+        entity.getEquipment().clear();
 
         for (String s : entityDataMap.keySet()) {
             MobCapture.logger.info(s + ":: " + entityDataMap.get(s));
@@ -207,6 +231,20 @@ public class PlayerListener implements Listener {
             Egg egg = player.launchProjectile(Egg.class);
             egg.setShooter(player);
             egg.setVelocity(player.getLocation().getDirection());
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onClickCustomInventory(InventoryClickEvent event) {
+        if (event.getInventory().getTitle().equals(Message.replaceColors("&9Equipment"))) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onDragCustomInventory(InventoryDragEvent event) {
+        if (event.getInventory().getTitle().equals(Message.replaceColors("&9Equipment"))) {
             event.setCancelled(true);
         }
     }

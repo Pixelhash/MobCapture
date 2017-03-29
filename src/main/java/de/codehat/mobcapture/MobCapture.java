@@ -3,12 +3,11 @@ package de.codehat.mobcapture;
 import de.codehat.mobcapture.commands.CommandManager;
 import de.codehat.mobcapture.commands.HelpCommand;
 import de.codehat.mobcapture.commands.ReloadConfigCommand;
+import de.codehat.mobcapture.commands.ShowEquipmentCommand;
+import de.codehat.mobcapture.dependencies.ProtocolLibDependency;
 import de.codehat.mobcapture.dependencies.VaultDependency;
 import de.codehat.mobcapture.dependencies.WorldGuardDependency;
-import de.codehat.mobcapture.listeners.EntityListener;
-import de.codehat.mobcapture.listeners.MobCaptureListener;
-import de.codehat.mobcapture.listeners.PlayerListener;
-import de.codehat.mobcapture.listeners.SpawnCapturedMobListener;
+import de.codehat.mobcapture.listeners.*;
 import org.bukkit.entity.Egg;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -25,6 +24,7 @@ public class MobCapture extends JavaPlugin {
 
     private VaultDependency vaultDependency = null;
     private WorldGuardDependency worldGuardDependency = null;
+    private ProtocolLibDependency protocolLibDependency = null;
     private CommandManager commandManager = new CommandManager(this);
     private List<Egg> eggStorage = new ArrayList<>();
 
@@ -44,6 +44,12 @@ public class MobCapture extends JavaPlugin {
             this.worldGuardDependency = new WorldGuardDependency(this);
         } catch (NoClassDefFoundError e) {
             logger.severe("WorldGuard is missing! Disabling 'mob protection in regions' feature...");
+        }
+        // Setup ProtocolLib
+        try {
+            this.protocolLibDependency = new ProtocolLibDependency(this);
+        } catch (NoClassDefFoundError e) {
+            logger.severe("ProtocolLib is missing! Disabling 'hiding lore data' feature...");
         }
     }
 
@@ -76,6 +82,7 @@ public class MobCapture extends JavaPlugin {
         this.commandManager.registerCommand("", helpCommand);
         this.commandManager.registerCommand("help", helpCommand);
         this.commandManager.registerCommand("reload", new ReloadConfigCommand(this));
+        this.commandManager.registerCommand("equipment", new ShowEquipmentCommand(this));
 
         this.getCommand("mc").setExecutor(this.commandManager);
     }
@@ -121,6 +128,10 @@ public class MobCapture extends JavaPlugin {
 
     public WorldGuardDependency getWorldGuardDependency() {
         return worldGuardDependency;
+    }
+
+    public ProtocolLibDependency getProtocolLibDependency() {
+        return protocolLibDependency;
     }
 
     public List<Egg> getEggStorage() {

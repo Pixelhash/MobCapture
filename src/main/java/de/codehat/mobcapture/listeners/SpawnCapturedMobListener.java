@@ -7,12 +7,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
-public class SpawnCapturedMobListener implements Listener {
-
-    private MobCapture plugin;
+public class SpawnCapturedMobListener extends PluginListener {
 
     public SpawnCapturedMobListener(MobCapture plugin) {
-        this.plugin = plugin;
+        super(plugin);
     }
 
     @EventHandler

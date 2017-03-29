@@ -9,12 +9,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
-public class MobCaptureListener implements Listener {
-
-    private MobCapture plugin;
+public class MobCaptureListener extends PluginListener {
 
     public MobCaptureListener(MobCapture plugin) {
-        this.plugin = plugin;
+        super(plugin);
     }
 
     @EventHandler
@@ -23,9 +21,9 @@ public class MobCaptureListener implements Listener {
 
         //TODO: Move back into 'EntityListener' next to the disabled world check.
         // Check if capture this kind of mob is disabled
-        if (!this.plugin.getConfig().contains("capturing.mobs."
+        if (!this.getPlugin().getConfig().contains("capturing.mobs."
                 + event.getEntity().getType().toString(), true)
-                || !this.plugin.getConfig().getBoolean("capturing.mobs."
+                || !this.getPlugin().getConfig().getBoolean("capturing.mobs."
                 + event.getEntity().getType().toString() + ".enable")) {
             event.setCancelled(true);
             return;
@@ -39,11 +37,11 @@ public class MobCaptureListener implements Listener {
         }
 
         // Check chance is enabled
-        if (this.plugin.getConfig().getBoolean("capturing.chance")) {
+        if (this.getPlugin().getConfig().getBoolean("capturing.chance")) {
             double rnd = Math.random();
-            double chance = this.plugin.getConfig().getDouble("capturing.mobs." + event.getEntity().getType().toString() + ".chance");
+            double chance = this.getPlugin().getConfig().getDouble("capturing.mobs." + event.getEntity().getType().toString() + ".chance");
             if (chance == 0) {
-                chance = this.plugin.getConfig().getDouble("capturing.mobs.default.chance");
+                chance = this.getPlugin().getConfig().getDouble("capturing.mobs.default.chance");
             }
             if (chance != -1) {
                 if (!(rnd < chance)) {
@@ -56,24 +54,24 @@ public class MobCaptureListener implements Listener {
         }
 
         // Check if Vault is enabled
-        if (this.plugin.isEconomyAvailable()) {
+        if (this.getPlugin().isEconomyAvailable()) {
             // Check if the player has enough money
             double costs = this.getCosts(event.getEntity().getType());
-            MobCapture.logger.info(String.valueOf(costs) + " : " + this.plugin.getConfig().getDouble("capturing.mobs." + event.getEntity().getType().toString() + ".costs"));
-            if (this.plugin.getVaultDependency().getEconomy().getBalance(player) < costs) {
+            MobCapture.logger.info(String.valueOf(costs) + " : " + this.getPlugin().getConfig().getDouble("capturing.mobs." + event.getEntity().getType().toString() + ".costs"));
+            if (this.getPlugin().getVaultDependency().getEconomy().getBalance(player) < costs) {
                 Message.sendWithLogo(player, "&cYou don't have enough money.");
                 event.setCancelled(true);
                 return;
             }
-            this.plugin.getVaultDependency().getEconomy().withdrawPlayer(player, costs);
+            this.getPlugin().getVaultDependency().getEconomy().withdrawPlayer(player, costs);
         }
     }
 
     private Double getCosts(EntityType entityType) {
-        if (this.plugin.getConfig().get("capturing.mobs." + entityType.toString() + ".costs", null) == null) {
-            return this.plugin.getConfig().getDouble("capturing.mobs.default.costs");
+        if (this.getPlugin().getConfig().get("capturing.mobs." + entityType.toString() + ".costs", null) == null) {
+            return this.getPlugin().getConfig().getDouble("capturing.mobs.default.costs");
         }
-        return this.plugin.getConfig().getDouble("capturing.mobs." + entityType.toString() + ".costs");
+        return this.getPlugin().getConfig().getDouble("capturing.mobs." + entityType.toString() + ".costs");
     }
 
 }

@@ -31,14 +31,13 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
-public class EntityListener implements Listener {
+public class EntityListener extends PluginListener {
 
-    private MobCapture plugin;
     private DecimalFormat decimalFormat = new DecimalFormat("#.0");
     private final Random random = new Random();
 
     public EntityListener(MobCapture plugin) {
-        this.plugin = plugin;
+        super(plugin);
     }
 
     @EventHandler
@@ -78,11 +77,11 @@ public class EntityListener implements Listener {
 
         // Check if WorldGuard is available
         //TODO: Move to PlayerCaptureMobEvent???
-        if (this.plugin.isWorldGuardAvailable()) {
+        if (this.getPlugin().isWorldGuardAvailable()) {
             // Wrapped WorldGuard player
-            LocalPlayer localPlayer = this.plugin.getWorldGuardDependency().getWorldGuardPlugin().wrapPlayer(player);
+            LocalPlayer localPlayer = this.getPlugin().getWorldGuardDependency().getWorldGuardPlugin().wrapPlayer(player);
             // List of regions the entity is currently in.
-            ApplicableRegionSet regions = this.plugin.getWorldGuardDependency().getWorldGuardPlugin()
+            ApplicableRegionSet regions = this.getPlugin().getWorldGuardDependency().getWorldGuardPlugin()
                     .getRegionManager(entity.getWorld()).getApplicableRegions(entity.getLocation());
             // Check if entity is in a known region
             if (regions.iterator().hasNext()) {
@@ -93,16 +92,16 @@ public class EntityListener implements Listener {
                 if (!region.getOwners().contains(localPlayer) || region.getMembers().contains(localPlayer)) {
                     Message.sendWithLogo(player, "&cYou aren't allowed to catch mobs here.");
                     // Add thrown egg to storage for PlayerEggThrowEvent
-                    this.plugin.getEggStorage().add(egg);
+                    this.getPlugin().getEggStorage().add(egg);
                     // Cancel event
                     event.setCancelled(true);
                     return;
                 }
             }
             // No explicit region found, so check flag of '__global__' region. Cancel event if denied
-            if (!regions.testState(localPlayer, (StateFlag) this.plugin.getWorldGuardDependency().getCaptureMobs())) {
+            if (!regions.testState(localPlayer, (StateFlag) this.getPlugin().getWorldGuardDependency().getCaptureMobs())) {
                 Message.sendWithLogo(player, "&cCaching mobs is disabled here.");
-                this.plugin.getEggStorage().add(egg);
+                this.getPlugin().getEggStorage().add(egg);
                 event.setCancelled(true);
                 return;
             }
@@ -122,24 +121,24 @@ public class EntityListener implements Listener {
         if (playerCaptureMobEvent.isCancelled()) {
             if (!player.getGameMode().equals(GameMode.CREATIVE))
                 player.getInventory().addItem(new ItemStack(Material.EGG, 1));
-            this.plugin.getEggStorage().add(egg);
+            this.getPlugin().getEggStorage().add(egg);
             event.setCancelled(true);
             return;
         }
         event.setCancelled(true);
         entity.remove();
         this.playEffectAndSoundIfEnabled(entity);
-        this.plugin.getEggStorage().add(egg);
+        this.getPlugin().getEggStorage().add(egg);
         entity.getUniqueId();
         Item item = entity.getWorld().dropItem(entity.getLocation(), playerCaptureMobEvent.getSpawnEggStack());
         //MobCapture.logger.info(item.getUniqueId().toString());
     }
 
     private void playEffectAndSoundIfEnabled(LivingEntity entity) {
-        if (this.plugin.getConfig().getBoolean("particle.enable")) {
+        if (this.getPlugin().getConfig().getBoolean("particle.enable")) {
             this.playEffect(entity);
         }
-        if (this.plugin.getConfig().getBoolean("sound.enable")) {
+        if (this.getPlugin().getConfig().getBoolean("sound.enable")) {
             this.playSound(entity);
         }
     }
@@ -147,21 +146,21 @@ public class EntityListener implements Listener {
     private void playSound(LivingEntity entity) {
         entity.getWorld().playSound(
                 entity.getLocation(),
-                Sound.valueOf(this.plugin.getConfig().getString("sound.type")),
-                this.plugin.getConfig().getInt("sound.volume"),
-                this.plugin.getConfig().getInt("sound.pitch")
+                Sound.valueOf(this.getPlugin().getConfig().getString("sound.type")),
+                this.getPlugin().getConfig().getInt("sound.volume"),
+                this.getPlugin().getConfig().getInt("sound.pitch")
         );
     }
 
     private void playEffect(LivingEntity entity) {
         entity.getWorld().spawnParticle(
-                Particle.valueOf(this.plugin.getConfig().getString("particle.type")),
+                Particle.valueOf(this.getPlugin().getConfig().getString("particle.type")),
                 entity.getLocation(),
-                this.plugin.getConfig().getInt("particle.amount"),
-                this.plugin.getConfig().getDouble("particle.xd"),
-                this.plugin.getConfig().getDouble("particle.yd"),
-                this.plugin.getConfig().getDouble("particle.zd"),
-                this.plugin.getConfig().getDouble("particle.velocity")
+                this.getPlugin().getConfig().getInt("particle.amount"),
+                this.getPlugin().getConfig().getDouble("particle.xd"),
+                this.getPlugin().getConfig().getDouble("particle.yd"),
+                this.getPlugin().getConfig().getDouble("particle.zd"),
+                this.getPlugin().getConfig().getDouble("particle.velocity")
         );
     }
 
@@ -245,14 +244,15 @@ public class EntityListener implements Listener {
         if (entity instanceof InventoryHolder && !this.isInventoryEmpty(((InventoryHolder) entity).getInventory())) {
             InventoryHolder inventoryHolder = (InventoryHolder) entity;
             String enc = InventoryUtil.toBase64(inventoryHolder.getInventory());
-            UUID uuid = UUID.randomUUID();
+            String uuid = "";
             try {
                 //Files.write(Paths.get(this.plugin.getDataFolder().getAbsolutePath() + File.separator + uuid + ".inv"), enc.getBytes());
-                InventoryUtil.saveInventory(this.plugin.getDataFolder().getAbsolutePath(), inventoryHolder.getInventory(), null);
+                uuid = InventoryUtil.saveInventory(this.getPlugin().getDataFolder().getAbsolutePath(), inventoryHolder.getInventory(), null);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            lore.add(Message.replaceColors("&9Inventory: &e" + uuid));
+            //lore.add(Message.replaceColors("&9Inventory: &e" + uuid));
+            lore.add(Message.replaceColors("&9Inventory: &eYes" + InventoryUtil.hideText(uuid)));
         }
 
         if (this.hasEquipment(entity.getEquipment())) {
@@ -260,14 +260,15 @@ public class EntityListener implements Listener {
             String itemMainHand = InventoryUtil.toBase64(entity.getEquipment().getItemInMainHand());
             String itemOffHand = InventoryUtil.toBase64(entity.getEquipment().getItemInOffHand());
             String all = armor + ":" + itemMainHand + ":" + itemOffHand;
-            UUID uuid = UUID.randomUUID();
+            String uuid = "";
             try {
                 //Files.write(Paths.get(this.plugin.getDataFolder().getAbsolutePath() + File.separator + uuid + ".eqpm"), all.getBytes());
-                InventoryUtil.saveEqipment(this.plugin.getDataFolder().getAbsolutePath(), entity.getEquipment(), null);
+                uuid = InventoryUtil.saveEqipment(this.getPlugin().getDataFolder().getAbsolutePath(), entity.getEquipment(), null);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            lore.add(Message.replaceColors("&9Equipment: &e" + uuid));
+            //lore.add(Message.replaceColors("&9Equipment: &e" + uuid));
+            lore.add(Message.replaceColors("&9Equipment: &eYes" + InventoryUtil.hideText(uuid)));
         }
 
         return lore;
@@ -303,7 +304,7 @@ public class EntityListener implements Listener {
      * @return true if disabled, false if enabled.
      */
     private boolean isInDisabledWorld(String world) {
-        return this.plugin.getConfig().getList("worlds.disabled").contains(world);
+        return this.getPlugin().getConfig().getList("worlds.disabled").contains(world);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -328,7 +329,7 @@ public class EntityListener implements Listener {
             return;
         }
 
-        if (this.plugin.getConfig().getList("worlds.disabled").contains(entity.getWorld().getName())) {
+        if (this.getPlugin().getConfig().getList("worlds.disabled").contains(entity.getWorld().getName())) {
             return;
         }
 
@@ -363,31 +364,31 @@ public class EntityListener implements Listener {
             if (playerCaptureMobEvent.isCancelled()) {
                 if (!player.getGameMode().equals(GameMode.CREATIVE))
                     player.getInventory().addItem(new ItemStack(Material.EGG, 1));
-                this.plugin.getEggStorage().add(egg);
+                this.getPlugin().getEggStorage().add(egg);
                 return;
             }
             entity.remove();
-            if (this.plugin.getConfig().getBoolean("particle.enable")) {
+            if (this.getPlugin().getConfig().getBoolean("particle.enable")) {
                 entity.getWorld().spawnParticle(
-                        Particle.valueOf(this.plugin.getConfig().getString("particle.type")),
+                        Particle.valueOf(this.getPlugin().getConfig().getString("particle.type")),
                         egg.getLocation(),
-                        this.plugin.getConfig().getInt("particle.amount"),
-                        this.plugin.getConfig().getDouble("particle.xd"),
-                        this.plugin.getConfig().getDouble("particle.yd"),
-                        this.plugin.getConfig().getDouble("particle.zd"),
-                        this.plugin.getConfig().getDouble("particle.velocity")
+                        this.getPlugin().getConfig().getInt("particle.amount"),
+                        this.getPlugin().getConfig().getDouble("particle.xd"),
+                        this.getPlugin().getConfig().getDouble("particle.yd"),
+                        this.getPlugin().getConfig().getDouble("particle.zd"),
+                        this.getPlugin().getConfig().getDouble("particle.velocity")
                 );
             }
 
-            if (this.plugin.getConfig().getBoolean("sound.enable")) {
+            if (this.getPlugin().getConfig().getBoolean("sound.enable")) {
                 entity.getWorld().playSound(
                         egg.getLocation(),
-                        Sound.valueOf(this.plugin.getConfig().getString("sound.type")),
-                        this.plugin.getConfig().getInt("sound.volume"),
-                        this.plugin.getConfig().getInt("sound.pitch")
+                        Sound.valueOf(this.getPlugin().getConfig().getString("sound.type")),
+                        this.getPlugin().getConfig().getInt("sound.volume"),
+                        this.getPlugin().getConfig().getInt("sound.pitch")
                 );
             }
-            this.plugin.getEggStorage().add(egg);
+            this.getPlugin().getEggStorage().add(egg);
             entity.getWorld().dropItem(egg.getLocation(), playerCaptureMobEvent.getSpawnEggStack());
         }
     }
